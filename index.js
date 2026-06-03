@@ -1549,6 +1549,34 @@ cameraControlsEl.innerHTML = `
 `;
 document.body.appendChild(cameraControlsEl);
 
+// Hint pill below toolbar — same width as controls bar, 20px gap between them
+const hintEl = document.createElement('div');
+hintEl.id = 'hintPill';
+hintEl.textContent = 'Click/tap locations to explore designs';
+hintEl.style.cssText = `
+  position: fixed;
+  bottom: 86px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 10px;
+  padding: 6px 14px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
+  border: 1px solid rgba(0,0,0,0.06);
+  font-family: 'Satoshi', 'Inter', -apple-system, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #555;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  letter-spacing: 0.2px;
+`;
+document.body.appendChild(hintEl);
+
 // Camera control handlers
 const defaultCameraPos = window.innerWidth >= 1024
   ? new THREE.Vector3(7.65, 13.35, 26.6)
