@@ -2194,6 +2194,7 @@ function resetSkater() {
   skater.scale.setScalar(1.6);
   skater.position.y = 0;
   skaterState = 'idle';
+  cameraFollowMode = false;
 
   // Close any door that was left open
   if (skaterTargetBuilding) {
@@ -2743,6 +2744,11 @@ const zoomedOutPos = new THREE.Vector3(-30, 34, 42);
 const zoomedOutTarget = new THREE.Vector3(2, 0, 1);
 let overlayActive = false;
 
+// Follow-cam — tracks the skater during a journey
+let cameraFollowMode = false;
+const _followOffset = new THREE.Vector3(2.5, 6.5, 11); // same angle as default view, ~12 units from skater
+const _skaterWP = new THREE.Vector3();
+
 function easeInOutCubic(t) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
@@ -2755,6 +2761,7 @@ function animateCamera(fromPos, toPos, fromTarget, toTarget, duration, onComplet
 function openWork(buildingKey) {
   if (overlayActive) return;
   overlayActive = true;
+  cameraFollowMode = false;
 
   // Save current camera only if not already saved
   if (!cameraStateSaved) {
@@ -2817,12 +2824,20 @@ function handleBuildingClick(buildingKey) {
   if (overlayActive) return;
   if (skaterState === 'skating' || skaterState === 'trick' || skaterState === 'entering') return;
 
-  // Save camera before skater starts
+  // Save camera before skater starts (used to restore after overlay closes)
   if (!cameraStateSaved) {
     savedCameraState.pos.copy(camera.position);
     savedCameraState.target.copy(controls.target);
     cameraStateSaved = true;
   }
+
+  // Zoom camera in toward skater so the journey is visible
+  cameraFollowMode = false;
+  skater.getWorldPosition(_skaterWP);
+  const followStartPos = _skaterWP.clone().add(_followOffset);
+  animateCamera(camera.position, followStartPos, controls.target, _skaterWP.clone(), 900, () => {
+    cameraFollowMode = true;
+  });
 
   startSkaterJourney(buildingKey);
 }
@@ -2926,6 +2941,13 @@ function animate() {
       cameraAnim = null;
       if (cb) cb();
     }
+  }
+
+  // Follow-cam: lerp position and target toward skater each frame
+  if (cameraFollowMode && !cameraAnim && !overlayActive) {
+    skater.getWorldPosition(_skaterWP);
+    camera.position.lerp(_skaterWP.clone().add(_followOffset), Math.min(4.0 * delta, 0.15));
+    controls.target.lerp(new THREE.Vector3(_skaterWP.x, _skaterWP.y + 0.5, _skaterWP.z), Math.min(5.0 * delta, 0.18));
   }
 
   // Slow auto-rotate when overlay is active
