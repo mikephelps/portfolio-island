@@ -1085,6 +1085,14 @@ island.add(createPathSegment(3, 0, 7.8, 0, PW * 0.85, 'pathHouse_s1'));
 island.add(createCurbSegment(3, 0 + curbOff * 0.75, 7.8, 0 + curbOff * 0.75, 'curbHouse1'));
 island.add(createCurbSegment(3, 0 - curbOff * 0.75, 7.8, 0 - curbOff * 0.75, 'curbHouse2'));
 
+// ====== BOWL SIDEWALK (branches south from studio fork at forkNW_a) ======
+// forkNW_a (-5, 3.5) -> bowlApproach (-5, 0) — skater walks west on grass from there
+island.add(createPathSegment(-5, 0, -5, 3.5, PW, 'pathBowl_s1'));
+
+// Curbs for bowl sidewalk (north-south segment only)
+island.add(createCurbSegment(-5 - curbOff, 0, -5 - curbOff, 3.5, 'curbBowl_A1'));
+island.add(createCurbSegment(-5 + curbOff, 0, -5 + curbOff, 3.5, 'curbBowl_A2'));
+
 // Street lamps at path corners
 function createLamp(x, z, name) {
   const lampGroup = new THREE.Group();
@@ -1155,6 +1163,184 @@ function createBench(x, z, rotation, name) {
 island.add(createBench(-3.2, 0, -Math.PI / 2, 'bench2'));
 island.add(createBench(0, 3.2, 0, 'bench3'));
 island.add(createBench(0, -3.2, Math.PI, 'bench4'));
+
+// ========== SKATE BOWL AREA (west of HQ, left side when looking at door) ==========
+const BOWL_CENTER_X = -9, BOWL_CENTER_Z = 0;
+const TRUCK_X = -12, TRUCK_Z = 0;
+const BOWL_BENCH_X = -9, BOWL_BENCH_Z = 2.8;
+
+{
+  const concreteMat = new THREE.MeshStandardMaterial({ color: 0xC8C2B2, roughness: 0.72, metalness: 0.04 });
+  const bowlInteriorMat = new THREE.MeshStandardMaterial({ color: 0x9A9488, roughness: 0.68, metalness: 0.04, side: THREE.DoubleSide });
+  const bowlFloorMat = new THREE.MeshStandardMaterial({ color: 0x888278, roughness: 0.70, metalness: 0.04 });
+  const copingMat = new THREE.MeshStandardMaterial({ color: 0x909090, roughness: 0.3, metalness: 0.7 });
+
+  const bowlGroup = new THREE.Group();
+  bowlGroup.name = 'skateBowl';
+
+  // Concrete surround — flat RING so the bowl interior is open (grass shows below,
+  // but we fill it with dark bowl surfaces to sell the depth illusion)
+  const surroundGeo = new THREE.RingGeometry(2.62, 4.0, 44);
+  surroundGeo.rotateX(-Math.PI / 2);
+  const surround = new THREE.Mesh(surroundGeo, concreteMat);
+  surround.name = 'bowlSurround';
+  surround.position.y = 0.07;
+  surround.receiveShadow = true;
+  bowlGroup.add(surround);
+
+  // Dark interior disc — covers the grass under the bowl opening (depth illusion)
+  const interiorDiscGeo = new THREE.CylinderGeometry(2.62, 2.62, 0.01, 40);
+  const interiorDisc = new THREE.Mesh(interiorDiscGeo, bowlInteriorMat);
+  interiorDisc.name = 'bowlInteriorDisc';
+  interiorDisc.position.y = 0.065;
+  bowlGroup.add(interiorDisc);
+
+  // Bowl wall — DoubleSide so the curved inside is visible from above
+  // Top at y=0.07 (rim), bottom at y=-0.52 (bowl floor level)
+  const wallGeo = new THREE.CylinderGeometry(2.6, 1.88, 0.60, 40, 1, true);
+  const wall = new THREE.Mesh(wallGeo, bowlInteriorMat);
+  wall.name = 'bowlWall';
+  wall.position.y = 0.07 - 0.30; // center = top - half height
+  bowlGroup.add(wall);
+
+  // Bowl floor disc (deepest point, darker)
+  const floorGeo = new THREE.CylinderGeometry(1.88, 1.88, 0.10, 40);
+  const bowlFloor = new THREE.Mesh(floorGeo, bowlFloorMat);
+  bowlFloor.name = 'bowlFloor';
+  bowlFloor.position.y = -0.57;
+  bowlGroup.add(bowlFloor);
+
+  // Center logo disc on floor
+  const logoDiskGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.01, 14);
+  const logoDiskMat = new THREE.MeshStandardMaterial({ color: 0x7A7268, roughness: 0.6 });
+  const logoDisk = new THREE.Mesh(logoDiskGeo, logoDiskMat);
+  logoDisk.name = 'bowlLogoDisk';
+  logoDisk.position.y = -0.50;
+  bowlGroup.add(logoDisk);
+
+  // Coping pipe at the rim (metal, classic skate bowl detail)
+  const copingGeo = new THREE.TorusGeometry(2.62, 0.04, 8, 44);
+  const coping = new THREE.Mesh(copingGeo, copingMat);
+  coping.name = 'bowlCoping';
+  coping.rotation.x = Math.PI / 2;
+  coping.position.y = 0.10;
+  coping.castShadow = true;
+  bowlGroup.add(coping);
+
+  bowlGroup.position.set(BOWL_CENTER_X, 0, BOWL_CENTER_Z);
+  island.add(bowlGroup);
+}
+
+// Ice cream truck
+{
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0xF5F0E8, roughness: 0.55, metalness: 0.08 });
+  const stripeMat = new THREE.MeshStandardMaterial({ color: 0xF070A0, roughness: 0.55, metalness: 0.05 });
+  const awningMat = new THREE.MeshStandardMaterial({ color: 0xD03060, roughness: 0.6 });
+  const windowMat = new THREE.MeshStandardMaterial({ color: 0xA0D8E8, roughness: 0.2, metalness: 0.1, transparent: true, opacity: 0.72 });
+  const truckWheelMat = new THREE.MeshStandardMaterial({ color: 0x282828, roughness: 0.85 });
+  const hubMat2 = new THREE.MeshStandardMaterial({ color: 0xB0B0B0, roughness: 0.35, metalness: 0.6 });
+
+  const truckGroup = new THREE.Group();
+  truckGroup.name = 'iceCreamTruck';
+
+  // Van body (long axis along Z, serves from -x face toward bowl)
+  const truckBodyGeo = new THREE.BoxGeometry(1.15, 1.38, 2.5);
+  const truckBody = new THREE.Mesh(truckBodyGeo, bodyMat);
+  truckBody.name = 'truckBody';
+  truckBody.position.y = 0.88;
+  truckBody.castShadow = true;
+  truckGroup.add(truckBody);
+
+  // Colored stripe band
+  const truckStripeGeo = new THREE.BoxGeometry(1.17, 0.2, 2.52);
+  const truckStripe = new THREE.Mesh(truckStripeGeo, stripeMat);
+  truckStripe.name = 'truckStripe';
+  truckStripe.position.y = 0.85;
+  truckGroup.add(truckStripe);
+
+  // Cab (front, -z end)
+  const cabGeo = new THREE.BoxGeometry(1.05, 0.95, 0.72);
+  const cab = new THREE.Mesh(cabGeo, bodyMat);
+  cab.name = 'truckCab';
+  cab.position.set(0, 0.62, -1.61);
+  cab.castShadow = true;
+  truckGroup.add(cab);
+
+  // Windshield
+  const windGeo = new THREE.BoxGeometry(0.75, 0.46, 0.07);
+  const wind = new THREE.Mesh(windGeo, windowMat);
+  wind.name = 'truckWindshield';
+  wind.position.set(0, 0.7, -1.98);
+  truckGroup.add(wind);
+
+  // Serving window (-x face, facing toward bowl)
+  const servWinGeo = new THREE.BoxGeometry(0.07, 0.48, 0.58);
+  const servWin = new THREE.Mesh(servWinGeo, windowMat);
+  servWin.name = 'truckServingWindow';
+  servWin.position.set(-0.61, 1.08, 0.1);
+  truckGroup.add(servWin);
+
+  // Awning above serving window
+  const awningGeo = new THREE.BoxGeometry(0.48, 0.06, 0.72);
+  const awning = new THREE.Mesh(awningGeo, awningMat);
+  awning.name = 'truckAwning';
+  awning.position.set(-0.82, 1.38, 0.1);
+  awning.rotation.z = 0.28;
+  truckGroup.add(awning);
+
+  // Roof
+  const roofGeo = new THREE.BoxGeometry(1.15, 0.12, 2.5);
+  const roofMat2 = new THREE.MeshStandardMaterial({ color: 0xE8E4D8, roughness: 0.65 });
+  const truckRoof = new THREE.Mesh(roofGeo, roofMat2);
+  truckRoof.name = 'truckRoof';
+  truckRoof.position.y = 1.64;
+  truckGroup.add(truckRoof);
+
+  // Sign on roof
+  const signGeo = new THREE.BoxGeometry(0.08, 0.38, 1.4);
+  const signMat = new THREE.MeshStandardMaterial({ color: 0xF070A0, roughness: 0.5 });
+  const sign = new THREE.Mesh(signGeo, signMat);
+  sign.name = 'truckSign';
+  sign.position.set(0.38, 1.9, 0.2);
+  truckGroup.add(sign);
+
+  // Three decorative scoops on top of sign
+  [{ z: -0.2, col: 0xFFB3CC }, { z: 0.2, col: 0x8B5E3C }, { z: 0.6, col: 0xFFF0DC }].forEach((sd, si) => {
+    const ssMat = new THREE.MeshStandardMaterial({ color: sd.col, roughness: 0.6 });
+    const ssGeo = new THREE.SphereGeometry(0.1, 8, 8);
+    const ss = new THREE.Mesh(ssGeo, ssMat);
+    ss.name = `truckSignScoop_${si}`;
+    ss.position.set(0.38, 2.22, sd.z);
+    truckGroup.add(ss);
+  });
+
+  // Wheels (4) — cylinder along Z axis (truck rolls along Z)
+  const truckWheelGeo2 = new THREE.CylinderGeometry(0.24, 0.24, 0.12, 14);
+  const truckHubGeo = new THREE.CylinderGeometry(0.09, 0.09, 0.02, 10);
+  [{ x: 0.65, z: -0.8 }, { x: -0.65, z: -0.8 }, { x: 0.65, z: 0.8 }, { x: -0.65, z: 0.8 }].forEach((wp, wi) => {
+    const tw = new THREE.Mesh(truckWheelGeo2, truckWheelMat);
+    tw.name = `truckWheel_${wi}`;
+    tw.rotation.z = Math.PI / 2;
+    tw.position.set(wp.x, 0.24, wp.z);
+    tw.castShadow = true;
+    truckGroup.add(tw);
+    const th = new THREE.Mesh(truckHubGeo, hubMat2);
+    th.rotation.z = Math.PI / 2;
+    th.position.set(wp.x > 0 ? wp.x + 0.08 : wp.x - 0.08, 0.24, wp.z);
+    truckGroup.add(th);
+  });
+
+  // Truck at west of bowl; rotate 180° so serving window (-x face) becomes +x (east, toward bowl)
+  truckGroup.rotation.y = Math.PI;
+  truckGroup.position.set(TRUCK_X, 0, TRUCK_Z);
+  island.add(truckGroup);
+}
+
+// Bowl-side bench (facing south toward bowl)
+island.add(createBench(BOWL_BENCH_X, BOWL_BENCH_Z, Math.PI, 'benchBowl'));
+
+// Lamp near bowl entrance
+island.add(createLamp(-5, 1.4, 'lampBowl'));
 
 // Small floating clouds
 function createCloud(x, y, z, scale, name) {
@@ -1573,6 +1759,27 @@ tooltipHouse.innerHTML = `
 `;
 document.body.appendChild(tooltipHouse);
 
+// Bowl tooltip (ice cream icon)
+const iceCreamSVG = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <ellipse cx="12" cy="9" rx="5" ry="5" fill="#FF8FAF" stroke="#E06080" stroke-width="1"/>
+  <ellipse cx="8.5" cy="10" rx="3.8" ry="3.8" fill="#8B5E3C" stroke="#6B4030" stroke-width="1"/>
+  <ellipse cx="15.5" cy="10" rx="3.5" ry="3.5" fill="#FFF0DC" stroke="#D4A867" stroke-width="1"/>
+  <path d="M9 14 L12 22 L15 14" fill="#D4A867" stroke="#C09050" stroke-width="1" stroke-linejoin="round"/>
+  <line x1="9.5" y1="16" x2="14.5" y2="16" stroke="#C09050" stroke-width="0.7"/>
+  <line x1="9" y1="18.5" x2="15" y2="18.5" stroke="#C09050" stroke-width="0.7"/>
+</svg>`;
+
+const tooltipBowl = document.createElement('div');
+tooltipBowl.className = 'building-tooltip';
+tooltipBowl.id = 'tooltipBowl';
+tooltipBowl.innerHTML = `
+  <div class="tooltip-inner" data-brand="bowl">
+    <div class="tooltip-logo">${iceCreamSVG}</div>
+    <div class="tooltip-cta" style="color: #E06080;">sk8 + chill</div>
+  </div>
+`;
+document.body.appendChild(tooltipBowl);
+
 // Tooltip position updater - always visible, tracks building
 function updateTooltipForBuilding(buildingName, tooltipDom, yOffset) {
   const group = island.getObjectByName(buildingName);
@@ -1600,6 +1807,7 @@ function updateTooltipPosition() {
   updateTooltipForBuilding('buildingTower', tooltipTower, 6.5);
   updateTooltipForBuilding('buildingGallery', tooltipGallery, 3.5);
   updateTooltipForBuilding('skaterHouse', tooltipHouse, 4.2);
+  updateTooltipForBuilding('iceCreamTruck', tooltipBowl, 3.5);
 }
 
 // ===== SKATER CHARACTER (cute bean-style, like the inspiration drawing) =====
@@ -1839,6 +2047,50 @@ function createSkater(name) {
 const skater = createSkater('skater');
 island.add(skater);
 
+// Ice cream cone (attached to skater, held in right hand during bowl sequence)
+{
+  const coneGrp = new THREE.Group();
+  coneGrp.name = 'skaterIceCream';
+
+  const coneMat = new THREE.MeshStandardMaterial({ color: 0xD4A867, roughness: 0.72 });
+  const coneGeo = new THREE.ConeGeometry(0.055, 0.16, 9);
+  const coneMesh = new THREE.Mesh(coneGeo, coneMat);
+  coneMesh.name = 'iceCreamCone';
+  coneMesh.position.y = 0.08;
+  coneGrp.add(coneMesh);
+
+  // Waffle cross-hatch lines
+  for (let i = 0; i < 3; i++) {
+    const lineGeo = new THREE.TorusGeometry(0.035 + i * 0.01, 0.004, 4, 10);
+    const lineMat = new THREE.MeshStandardMaterial({ color: 0xC09050, roughness: 0.8 });
+    const line = new THREE.Mesh(lineGeo, lineMat);
+    line.rotation.x = Math.PI / 2;
+    line.position.y = 0.05 + i * 0.04;
+    coneGrp.add(line);
+  }
+
+  const scoopDefs = [
+    { color: 0xFF8FAF, y: 0.195, r: 0.068 }, // strawberry
+    { color: 0x7A4A2C, y: 0.278, r: 0.062 }, // chocolate
+    { color: 0xFFF3D0, y: 0.354, r: 0.056 }, // vanilla
+  ];
+  scoopDefs.forEach((sd, si) => {
+    const scoopMat = new THREE.MeshStandardMaterial({ color: sd.color, roughness: 0.65 });
+    const scoopGeo = new THREE.SphereGeometry(sd.r, 10, 8);
+    const scoop = new THREE.Mesh(scoopGeo, scoopMat);
+    scoop.name = `iceCreamScoop_${si}`;
+    scoop.position.y = sd.y;
+    coneGrp.add(scoop);
+  });
+
+  // Attach to bodyGroup so cone follows body rotation (no floating)
+  // bodyGroup is at y=0.12 in skater local; cone at right-arm height in bodyGroup local
+  const _iceBG = skater.getObjectByName('skater_bodyGroup');
+  coneGrp.position.set(0.22, 0.44, 0.10);
+  coneGrp.visible = false;
+  if (_iceBG) _iceBG.add(coneGrp); else skater.add(coneGrp);
+}
+
 // ===== PATHFINDING NETWORK =====
 // Nodes: each named location with island-local coordinates
 const pathNodes = {
@@ -1862,6 +2114,8 @@ const pathNodes = {
   towerDoor: { x: 7.4, z: -8 },
   galleryJct: { x: -5, z: -8 },
   galleryDoor: { x: -7.5, z: -8 },
+  bowlApproach: { x: -5, z: 0 },
+  bowlEntry: { x: -8.5, z: 0 },
 };
 
 const pathEdges = [
@@ -1884,6 +2138,8 @@ const pathEdges = [
   ['towerJct', 'towerDoor'],
   ['forkSW_a', 'galleryJct'],
   ['galleryJct', 'galleryDoor'],
+  ['forkNW_a', 'bowlApproach'],
+  ['bowlApproach', 'bowlEntry'],
 ];
 
 // Build adjacency list
@@ -1926,6 +2182,7 @@ const buildingDoorNode = {
   buildingTower: 'towerDoor',
   buildingGallery: 'galleryDoor',
   skaterHouse: 'house',
+  skateBowl: 'bowlEntry',
 };
 
 // Closest node to skater's current position
@@ -1940,7 +2197,7 @@ function closestNode(x, z) {
 }
 
 // ===== SKATER ANIMATION STATE =====
-let skaterState = 'idle'; // idle | skating | trick | entering | done
+let skaterState = 'idle'; // idle | skating | trick | entering | done | bowlRiding | bowlWalkTruck | bowlGetIceCream | bowlWalkBench | benchSitting
 let skaterPath = []; // array of {x, z} waypoints
 let skaterPathIndex = 0;
 let skaterSpeed = 3.5; // much slower for visibility
@@ -1953,10 +2210,27 @@ let skaterCurrentNode = 'house';
 let skaterDidTrick = false; // only one trick per journey
 let skaterTrickWaypointIndex = -1; // which path segment to do the trick at
 
+// Bowl-sequence state
+let bowlTimer = 0;
+let _bowlDroppedBoardShown = false;
+
 const flipTrickTypes = ['kickflip', 'heelflip', 'treflip'];
 
 function startSkaterJourney(buildingKey) {
-  if (skaterState !== 'idle' && skaterState !== 'done') return;
+  if (skaterState !== 'idle' && skaterState !== 'done' && skaterState !== 'benchSitting') return;
+
+  // Leaving bench — restore board, hide ice cream, reset y
+  if (skaterState === 'benchSitting') {
+    const boardGroup = skater.getObjectByName('skater_boardGroup');
+    if (boardGroup) { boardGroup.visible = true; boardGroup.position.y = 0.13; boardGroup.rotation.set(0, 0, 0); }
+    const ic = skater.getObjectByName('skaterIceCream');
+    if (ic) ic.visible = false;
+    skater.position.y = 0;
+    skater.visible = true;
+    _bowlDroppedBoardShown = false;
+    const droppedBoard = island.getObjectByName('bowlDroppedBoard');
+    if (droppedBoard) { droppedBoard.visible = false; }
+  }
 
   const doorNode = buildingDoorNode[buildingKey];
   if (!doorNode) return;
@@ -2013,9 +2287,6 @@ function updateSkater(delta) {
 
   if (skaterState === 'skating') {
     if (skaterPathIndex >= skaterPath.length - 1) {
-      // Arrived at destination — go directly to entering, no trick at the door
-      skaterState = 'entering';
-      skaterEnterTimer = 0;
       skaterCurrentNode = skaterPath[skaterPath.length - 1].node || closestNode(skater.position.x, skater.position.z);
       // Reset pose
       if (leftLeg) leftLeg.rotation.x = 0;
@@ -2023,6 +2294,15 @@ function updateSkater(delta) {
       if (leftArm) { leftArm.rotation.x = 0; leftArm.rotation.z = -0.3; }
       if (rightArm) { rightArm.rotation.x = 0; rightArm.rotation.z = 0.3; }
       if (bodyGroup) { bodyGroup.rotation.z = 0; bodyGroup.position.y = 0; }
+      // Bowl destination — skip door sequence, start bowl animation
+      if (skaterTargetBuilding === 'skateBowl') {
+        bowlTimer = 0;
+        _bowlDroppedBoardShown = false;
+        skaterState = 'bowlRiding';
+      } else {
+        skaterState = 'entering';
+        skaterEnterTimer = 0;
+      }
       return;
     }
 
@@ -2208,6 +2488,188 @@ function updateSkater(delta) {
       triggerWipeTransition(pendingBuildingKey);
     }
   }
+
+  // ===== BOWL ANIMATION STATES =====
+
+  if (skaterState === 'bowlRiding') {
+    bowlTimer += delta;
+    const t = bowlTimer;
+
+    // Phase 1 (0-0.5s): glide into bowl — skater moves to rim, leans in
+    const dropDur = 0.5;
+    // Phase 2 (0.5-2.0s): carve around the bowl in a circle at the rim
+    const rideDur = 1.5;
+    // Phase 3 (2.0-3.2s): BIG aerial — full pop up, 360 spin, arms wide
+    const airDur = 1.2;
+    // Phase 4 (3.2-3.7s): land and coast to stop
+    const landDur = 0.5;
+    const totalBowl = dropDur + rideDur + airDur + landDur;
+
+    if (t < dropDur) {
+      const nt = t / dropDur;
+      const ease = 1 - Math.pow(1 - nt, 2);
+      // Slide toward bowl rim (radius 1.8 from center)
+      const startAngle = Math.PI / 2; // approach from south of bowl
+      const rimX = BOWL_CENTER_X + Math.cos(startAngle) * 1.8;
+      const rimZ = BOWL_CENTER_Z + Math.sin(startAngle) * 1.8;
+      skater.position.x += (rimX - skater.position.x) * ease * delta * 5;
+      skater.position.z += (rimZ - skater.position.z) * ease * delta * 5;
+      skater.position.y = 0; // stay above ground
+      for (let wi = 0; wi < 4; wi++) {
+        const w = skater.getObjectByName(`skater_wheel_${wi}`);
+        if (w) w.rotation.x += delta * 10;
+      }
+      if (bodyGroup) bodyGroup.rotation.z = -0.15 * nt; // lean into bowl
+    } else if (t < dropDur + rideDur) {
+      const nt = (t - dropDur) / rideDur;
+      // Carve a full circle around the bowl rim — dramatic leaning visible from camera
+      const angle = Math.PI / 2 + nt * Math.PI * 2; // full circle
+      const radius = 1.8;
+      skater.position.x = BOWL_CENTER_X + Math.cos(angle) * radius;
+      skater.position.z = BOWL_CENTER_Z + Math.sin(angle) * radius;
+      skater.position.y = 0;
+      // Face tangent to circle (direction of travel)
+      skater.rotation.y = -angle - Math.PI / 2;
+      // Lean hard into the bowl center (bank turn lean)
+      if (bodyGroup) bodyGroup.rotation.z = -0.35;
+      if (boardGroup) boardGroup.rotation.z = -0.2;
+      for (let wi = 0; wi < 4; wi++) {
+        const w = skater.getObjectByName(`skater_wheel_${wi}`);
+        if (w) w.rotation.x += delta * 20;
+      }
+    } else if (t < dropDur + rideDur + airDur) {
+      const nt = (t - dropDur - rideDur) / airDur;
+      // Pop aerial from center of bowl: jump high, full 360 spin, grab pose
+      const jumpH = Math.sin(nt * Math.PI) * 2.2;
+      skater.position.y = jumpH;
+      // Move toward bowl center during air
+      skater.position.x += (BOWL_CENTER_X - skater.position.x) * delta * 4;
+      skater.position.z += (BOWL_CENTER_Z - skater.position.z) * delta * 4;
+      skater.rotation.y += delta * (Math.PI * 2 / airDur); // full 360 in the air
+      if (bodyGroup) { bodyGroup.position.y = 0; bodyGroup.rotation.z = 0; }
+      if (boardGroup) {
+        boardGroup.position.y = 0.13;
+        boardGroup.rotation.x = Math.sin(nt * Math.PI) * 0.4;
+      }
+      if (leftArm) leftArm.rotation.z = -0.3 - Math.sin(nt * Math.PI) * 1.0;
+      if (rightArm) rightArm.rotation.z = 0.3 + Math.sin(nt * Math.PI) * 1.0;
+      if (leftLeg) leftLeg.rotation.x = -0.55 * Math.sin(nt * Math.PI);
+      if (rightLeg) rightLeg.rotation.x = -0.55 * Math.sin(nt * Math.PI);
+    } else if (t < totalBowl) {
+      const nt = (t - dropDur - rideDur - airDur) / landDur;
+      // Land — y back to 0, reset limbs
+      skater.position.y = 0;
+      if (boardGroup) { boardGroup.position.y = 0.13; boardGroup.rotation.set(0, 0, 0); }
+      if (bodyGroup) { bodyGroup.position.y = 0; bodyGroup.rotation.set(0, 0, 0); }
+      if (leftArm) { leftArm.rotation.z = -0.3; leftArm.rotation.x = 0; }
+      if (rightArm) { rightArm.rotation.z = 0.3; rightArm.rotation.x = 0; }
+      if (leftLeg) leftLeg.rotation.x = 0;
+      if (rightLeg) rightLeg.rotation.x = 0;
+      for (let wi = 0; wi < 4; wi++) {
+        const w = skater.getObjectByName(`skater_wheel_${wi}`);
+        if (w) w.rotation.x += delta * (14 * (1 - nt));
+      }
+    } else {
+      // Done riding — step off board, show dropped board in bowl
+      skater.position.y = 0;
+      if (boardGroup) { boardGroup.visible = false; }
+      // Place dropped board in bowl
+      if (!_bowlDroppedBoardShown) {
+        _bowlDroppedBoardShown = true;
+        let droppedBoard = island.getObjectByName('bowlDroppedBoard');
+        if (!droppedBoard) {
+          const dbGeo = new THREE.BoxGeometry(0.22 * 1.6, 0.045 * 1.6, 0.7 * 1.6);
+          const dbMat = new THREE.MeshStandardMaterial({ color: 0x8D6E63, roughness: 0.7 });
+          droppedBoard = new THREE.Mesh(dbGeo, dbMat);
+          droppedBoard.name = 'bowlDroppedBoard';
+          island.add(droppedBoard);
+        }
+        droppedBoard.visible = true;
+        droppedBoard.position.set(BOWL_CENTER_X, -0.38, BOWL_CENTER_Z);
+        droppedBoard.rotation.set(0, Math.PI / 4, 0.15); // tilted in bowl
+      }
+      skaterState = 'bowlWalkTruck';
+      bowlTimer = 0;
+    }
+    return;
+  }
+
+  if (skaterState === 'bowlWalkTruck') {
+    bowlTimer += delta;
+    const truckTarget = { x: TRUCK_X + 1.4, z: TRUCK_Z }; // approach from east (bowl side)
+    const dx = truckTarget.x - skater.position.x;
+    const dz = truckTarget.z - skater.position.z;
+    const dist = Math.sqrt(dx * dx + dz * dz);
+    if (dist > 0.12) {
+      const spd = 1.8 * delta;
+      skater.position.x += (dx / dist) * Math.min(spd, dist);
+      skater.position.z += (dz / dist) * Math.min(spd, dist);
+      skater.rotation.y = Math.atan2(dx, dz);
+      // Walking animation without board
+      if (leftLeg) leftLeg.rotation.x = Math.sin(bowlTimer * 6) * 0.3;
+      if (rightLeg) rightLeg.rotation.x = -Math.sin(bowlTimer * 6) * 0.3;
+      if (leftArm) leftArm.rotation.x = -Math.sin(bowlTimer * 6) * 0.2;
+      if (rightArm) rightArm.rotation.x = Math.sin(bowlTimer * 6) * 0.2;
+    } else {
+      // Arrived at truck — face west toward serving window
+      skater.rotation.y = Math.PI / 2;
+      if (leftLeg) leftLeg.rotation.x = 0;
+      if (rightLeg) rightLeg.rotation.x = 0;
+      skaterState = 'bowlGetIceCream';
+      bowlTimer = 0;
+    }
+    return;
+  }
+
+  if (skaterState === 'bowlGetIceCream') {
+    bowlTimer += delta;
+    // Brief wait at window, then ice cream appears
+    if (bowlTimer > 0.7) {
+      const ic = skater.getObjectByName('skaterIceCream');
+      if (ic) ic.visible = true;
+    }
+    if (bowlTimer > 1.4) {
+      skaterState = 'bowlWalkBench';
+      bowlTimer = 0;
+    }
+    return;
+  }
+
+  if (skaterState === 'bowlWalkBench') {
+    bowlTimer += delta;
+    const benchTarget = { x: BOWL_BENCH_X, z: BOWL_BENCH_Z - 0.7 }; // in front of bench
+    const dx = benchTarget.x - skater.position.x;
+    const dz = benchTarget.z - skater.position.z;
+    const dist = Math.sqrt(dx * dx + dz * dz);
+    if (dist > 0.12) {
+      const spd = 1.8 * delta;
+      skater.position.x += (dx / dist) * Math.min(spd, dist);
+      skater.position.z += (dz / dist) * Math.min(spd, dist);
+      skater.rotation.y = Math.atan2(dx, dz);
+      if (leftLeg) leftLeg.rotation.x = Math.sin(bowlTimer * 6) * 0.28;
+      if (rightLeg) rightLeg.rotation.x = -Math.sin(bowlTimer * 6) * 0.28;
+    } else {
+      // Sit down on bench — face south (toward bowl)
+      skater.rotation.y = Math.PI;
+      if (leftLeg) { leftLeg.rotation.x = 0.55; }
+      if (rightLeg) { rightLeg.rotation.x = 0.55; }
+      if (leftArm) { leftArm.rotation.x = -0.1; leftArm.rotation.z = -0.25; }
+      if (rightArm) { rightArm.rotation.x = -0.1; rightArm.rotation.z = 0.25; }
+      if (bodyGroup) bodyGroup.rotation.x = 0.15; // slight lean back
+      skaterState = 'benchSitting';
+      bowlTimer = 0;
+    }
+    return;
+  }
+
+  if (skaterState === 'benchSitting') {
+    // Idle sitting — gentle sway, hold ice cream
+    bowlTimer += delta;
+    if (bodyGroup) bodyGroup.rotation.x = 0.15 + Math.sin(bowlTimer * 1.5) * 0.02;
+    const ic = skater.getObjectByName('skaterIceCream');
+    if (ic && !ic.visible) ic.visible = true;
+    return;
+  }
 }
 
 function resetSkater() {
@@ -2223,10 +2685,25 @@ function resetSkater() {
     if (doorPivot) doorPivot.rotation.y = 0;
   }
 
+  // Reset bowl-specific state
+  const ic = skater.getObjectByName('skaterIceCream');
+  if (ic) ic.visible = false;
+  const droppedBoard = island.getObjectByName('bowlDroppedBoard');
+  if (droppedBoard) droppedBoard.visible = false;
+  _bowlDroppedBoardShown = false;
+
   const bodyGroup = skater.getObjectByName('skater_bodyGroup');
   const boardGroup = skater.getObjectByName('skater_boardGroup');
-  if (bodyGroup) { bodyGroup.position.y = 0; bodyGroup.rotation.z = 0; }
-  if (boardGroup) { boardGroup.position.y = 0.13; boardGroup.rotation.set(0, 0, 0); }
+  const leftLeg = skater.getObjectByName('skater_leftLeg');
+  const rightLeg = skater.getObjectByName('skater_rightLeg');
+  const leftArm = skater.getObjectByName('skater_leftArm');
+  const rightArm = skater.getObjectByName('skater_rightArm');
+  if (bodyGroup) { bodyGroup.position.y = 0; bodyGroup.rotation.set(0, 0, 0); }
+  if (boardGroup) { boardGroup.visible = true; boardGroup.position.y = 0.13; boardGroup.rotation.set(0, 0, 0); }
+  if (leftLeg) { leftLeg.rotation.x = 0; }
+  if (rightLeg) { rightLeg.rotation.x = 0; }
+  if (leftArm) { leftArm.rotation.x = 0; leftArm.rotation.z = -0.3; }
+  if (rightArm) { rightArm.rotation.x = 0; rightArm.rotation.z = 0.3; }
 }
 
 // ===== WIPE TRANSITION =====
@@ -2466,8 +2943,8 @@ overlayStyles.textContent = `
     width: 44px;
     height: 44px;
     border-radius: 50%;
-    background: #fff;
-    border: 1px solid rgba(0,0,0,0.08);
+    background: #1A6070;
+    border: none;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2475,19 +2952,19 @@ overlayStyles.textContent = `
     font-family: 'Inter', -apple-system, sans-serif;
     font-size: 18px;
     font-weight: 300;
-    color: #333;
+    color: #ffffff;
     opacity: 0;
     transform: scale(0.8) rotate(-90deg);
     transition: opacity 0.35s ease 0.3s, transform 0.45s cubic-bezier(0.34,1.56,0.64,1) 0.3s, background 0.2s ease, box-shadow 0.2s ease;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
   }
   #workOverlay.active #workClose {
     opacity: 1;
     transform: scale(1) rotate(0deg);
   }
   #workClose:hover {
-    background: #f5f5f5;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    background: #235e6e;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.22);
   }
   #workScroll {
     position: fixed;
@@ -2842,7 +3319,8 @@ document.getElementById('workClose').addEventListener('click', closeWork);
 // Click on buildings or tooltips — now triggers skater journey
 function handleBuildingClick(buildingKey) {
   if (overlayActive) return;
-  if (skaterState === 'skating' || skaterState === 'trick' || skaterState === 'entering') return;
+  const bowlStates = ['bowlRiding', 'bowlWalkTruck', 'bowlGetIceCream', 'bowlWalkBench'];
+  if (skaterState === 'skating' || skaterState === 'trick' || skaterState === 'entering' || bowlStates.includes(skaterState)) return;
 
   // Save camera before skater starts (used to restore after overlay closes)
   if (!cameraStateSaved) {
@@ -2868,7 +3346,7 @@ renderer.domElement.addEventListener('click', (event) => {
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(mouse, camera);
 
-  const buildingNames = ['buildingHQ', 'buildingStudio', 'buildingLab', 'buildingTower', 'buildingGallery', 'skaterHouse'];
+  const buildingNames = ['buildingHQ', 'buildingStudio', 'buildingLab', 'buildingTower', 'buildingGallery', 'skaterHouse', 'skateBowl', 'iceCreamTruck'];
   const allBuildingMeshes = getBuildingMeshes(...buildingNames);
   const intersects = raycaster.intersectObjects(allBuildingMeshes, false);
 
@@ -2879,7 +3357,8 @@ renderer.domElement.addEventListener('click', (event) => {
       if (group) {
         let found = false;
         group.traverse(c => { if (c === hit) found = true; });
-        if (found) { handleBuildingClick(bName); return; }
+        // Both the bowl and truck trigger the bowl journey
+        if (found) { handleBuildingClick(bName === 'iceCreamTruck' ? 'skateBowl' : bName); return; }
       }
     }
   }
@@ -2893,6 +3372,7 @@ const tooltipBuildingMap = {
   'tooltipTower': 'buildingTower',
   'tooltipGallery': 'buildingGallery',
   'tooltipHouse': 'skaterHouse',
+  'tooltipBowl': 'skateBowl',
 };
 Object.entries(tooltipBuildingMap).forEach(([tooltipId, buildingKey]) => {
   const el = document.getElementById(tooltipId);
@@ -2910,7 +3390,7 @@ renderer.domElement.addEventListener('mousemove', (event) => {
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
   raycaster.setFromCamera(mouse, camera);
-  const allBuildingMeshes = getBuildingMeshes('buildingHQ', 'buildingStudio', 'buildingLab', 'buildingTower', 'buildingGallery', 'skaterHouse');
+  const allBuildingMeshes = getBuildingMeshes('buildingHQ', 'buildingStudio', 'buildingLab', 'buildingTower', 'buildingGallery', 'skaterHouse', 'skateBowl', 'iceCreamTruck');
   const intersects = raycaster.intersectObjects(allBuildingMeshes, false);
 
   renderer.domElement.style.cursor = intersects.length > 0 ? 'pointer' : 'default';
