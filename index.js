@@ -1667,18 +1667,39 @@ function createSkater(name) {
     boardGroup.add(axle);
   });
 
-  // Wheels — radius 0.08 so they're clearly visible, x=±0.155 so they protrude past deck edge
-  const wheelGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.065, 12);
+  // Wheels — wrapper group handles position + rolling (rotation.x), mesh child handles orientation
+  const wheelGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.065, 14);
+  const hubGeo = new THREE.CylinderGeometry(0.032, 0.032, 0.01, 10);
+  const hubMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.4, metalness: 0.7 });
+  const valveMat = new THREE.MeshStandardMaterial({ color: 0xff4400, roughness: 0.5 });
+  const valveGeo = new THREE.SphereGeometry(0.013, 6, 6);
   const wheelSpots = [
     { x: 0.155, z: 0.2 }, { x: -0.155, z: 0.2 },
     { x: 0.155, z: -0.2 }, { x: -0.155, z: -0.2 },
   ];
   wheelSpots.forEach((wp, wi) => {
+    const wheelWrapper = new THREE.Group();
+    wheelWrapper.name = `${name}_wheel_${wi}`;
+    wheelWrapper.position.set(wp.x, -0.05, wp.z);
+
     const wheel = new THREE.Mesh(wheelGeo, wheelMat);
-    wheel.name = `${name}_wheel_${wi}`;
-    wheel.position.set(wp.x, -0.05, wp.z);
     wheel.rotation.z = Math.PI / 2;
-    boardGroup.add(wheel);
+    wheelWrapper.add(wheel);
+
+    // Hub caps on each face
+    [-0.037, 0.037].forEach(hx => {
+      const hub = new THREE.Mesh(hubGeo, hubMat);
+      hub.rotation.z = Math.PI / 2;
+      hub.position.x = hx;
+      wheelWrapper.add(hub);
+    });
+
+    // Valve dot — orbits visibly when rolling
+    const valve = new THREE.Mesh(valveGeo, valveMat);
+    valve.position.set(0, 0.075, 0);
+    wheelWrapper.add(valve);
+
+    boardGroup.add(wheelWrapper);
   });
 
   // y raised so larger wheels (r=0.08) still just touch the ground: 0.13 - 0.05 - 0.08 = 0
@@ -1978,7 +1999,7 @@ function updateSkater(delta) {
     // Spin wheels slowly
     for (let wi = 0; wi < 4; wi++) {
       const wheel = skater.getObjectByName(`skater_wheel_${wi}`);
-      if (wheel) wheel.rotation.y += 0.01;
+      if (wheel) wheel.rotation.x += 0.01;
     }
     return;
   }
@@ -2069,7 +2090,7 @@ function updateSkater(delta) {
     // Spin wheels (rolling forward)
     for (let wi = 0; wi < 4; wi++) {
       const wheel = skater.getObjectByName(`skater_wheel_${wi}`);
-      if (wheel) wheel.rotation.y += 0.25;
+      if (wheel) wheel.rotation.x += 0.25;
     }
 
     return;
@@ -2166,7 +2187,7 @@ function updateSkater(delta) {
       // Spin wheels while walking in
       for (let wi = 0; wi < 4; wi++) {
         const wheel = skater.getObjectByName(`skater_wheel_${wi}`);
-        if (wheel) wheel.rotation.y += delta * 6;
+        if (wheel) wheel.rotation.x += delta * 6;
       }
 
       // Snap invisible once skater crosses the door plane into building
@@ -2396,16 +2417,15 @@ const brandData = {
     role: 'Mike Phelps',
     period: 'Designer · Dreamer · Builder',
     bullets: [
-      'I have an endless drive to create things. Preferably the full scope: from scratch to finish.',
-      'I am passionate about bridging design and engineering — hands-on with code, tooling, and AI workflows',
-      'I love writing and recording music.',
-      'I love tortilla chips more than most things.',
+      'This is a brand new portfolio experience, still in progress & made with Three.JS',
+      'I also have a new Astro website focused on Nutrition Tools, screenshots below - see at: CaloricLab.com',
+      '2 Fun Facts: I love writing/recording music and equally love tortilla chips.',
     ],
     visuals: [
-      { img: 'assets/sample.jpg', label: 'Portrait' },
-      { img: 'assets/sample.jpg', label: 'Process' },
-      { img: 'assets/sample.jpg', label: 'Workspace' },
-      { img: 'assets/sample.jpg', label: 'Inspiration' },
+      { img: 'assets/cl-01.jpg', label: 'Web - Home' },
+      { img: 'assets/cl-02.jpg', label: 'Custom Food Log Web App' },
+      { img: 'assets/cl-03.jpg', label: 'Custom Habit Tracker Web App' },
+      { img: 'assets/cl-04.jpg', label: 'Web - Home CTAs' },
     ],
   },
 };
