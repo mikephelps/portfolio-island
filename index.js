@@ -1455,7 +1455,7 @@ overlay.innerHTML = `
       font-family: 'Satoshi', 'Inter', -apple-system, sans-serif;
       font-size: clamp(15px, 3.5vw, 16px); font-weight: 500; color: #1a1a2e;
       letter-spacing: 0.5px; margin-top: 4px; opacity: 0.6;
-    ">recent projects by Mike Phelps</div>
+    ">design projects by mike phelps</div>
   </div>
 `;
 document.body.appendChild(overlay);
