@@ -1258,17 +1258,17 @@ overlay.innerHTML = `
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
     pointer-events: none; user-select: none;
     text-align: center;
-    padding-top: 36px;
+    padding-top: clamp(20px, 5vw, 36px);
   ">
     <div style="
       font-family: 'Solway', 'Satoshi', 'Inter', serif;
-      font-size: 40px; font-weight: 700; color: #1a1a2e;
+      font-size: clamp(32px, 7.5vw, 40px); font-weight: 700; color: #1a1a2e;
       letter-spacing: -0.5px; line-height: 1.1;
     ">Pofo Village</div>
     <div style="
       font-family: 'Satoshi', 'Inter', -apple-system, sans-serif;
-      font-size: 13px; font-weight: 500; color: #333;
-      letter-spacing: 0.5px; margin-top: 4px;
+      font-size: clamp(15px, 3.5vw, 16px); font-weight: 500; color: #1a1a2e;
+      letter-spacing: 0.5px; margin-top: 4px; opacity: 0.6;
     ">recent projects by Mike Phelps</div>
   </div>
 `;
