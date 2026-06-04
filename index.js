@@ -4,14 +4,14 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 // Scene setup
 const scene = new THREE.Scene();
 
-// Gradient sky dome — MV-style teal-blue to soft lavender horizon
+// Gradient sky dome — purple top to soft yellow horizon
 {
   const skyGeo = new THREE.SphereGeometry(400, 32, 16);
   const skyMat = new THREE.ShaderMaterial({
     uniforms: {
-      topColor:    { value: new THREE.Color(0x7AB0CC) },
-      horizColor:  { value: new THREE.Color(0xC0B8D4) },
-      bottomColor: { value: new THREE.Color(0xD0C4CC) },
+      topColor:    { value: new THREE.Color(0xFFE1CB) },
+      horizColor:  { value: new THREE.Color(0xDCD3F2) },
+      bottomColor: { value: new THREE.Color(0x9E9DDB) },
     },
     vertexShader: `
       varying vec3 vWorldPos;
@@ -40,7 +40,7 @@ const scene = new THREE.Scene();
   scene.add(new THREE.Mesh(skyGeo, skyMat));
 }
 
-scene.fog = new THREE.Fog(0xC4C0D0, 50, 130);
+scene.fog = new THREE.Fog(0xB4D7DE, 50, 130);
 
 // Desktop: lower, more frontal, shows sky above title + water on sides
 // Mobile: wider/overhead to fit everything
@@ -107,7 +107,7 @@ island.scale.setScalar(0.85);
 scene.add(island);
 
 // Helper: Rounded box
-function createRoundedBox(w, h, d, r, color, segments = 4, roughness = 0.42, metalness = 0.05) {
+function createRoundedBox(w, h, d, r, color, segments = 4, roughness = 0.42, metalness = 0.05, flatShading = false, rockiness = 0) {
   const geo = new THREE.BoxGeometry(w, h, d, segments, segments, segments);
   const positions = geo.attributes.position;
   const v = new THREE.Vector3();
@@ -126,58 +126,64 @@ function createRoundedBox(w, h, d, r, color, segments = 4, roughness = 0.42, met
     }
     positions.setXYZ(i, v.x, v.y, v.z);
   }
-  geo.computeVertexNormals();
-  const mat = new THREE.MeshStandardMaterial({ color, roughness, metalness });
+  // Rocky displacement — large irregular shapes, fades to zero near top so grass stays flat
+  // Low frequencies (0.15–0.45) = wavelength spans many vertices = big organic shapes, no diamond grid
+  if (rockiness > 0) {
+    for (let i = 0; i < positions.count; i++) {
+      v.fromBufferAttribute(positions, i);
+      const normY = v.y / (h / 2);
+      const fade = Math.max(0, Math.min(1, (0.72 - normY) / 0.55));
+      if (fade > 0) {
+        const bump = (
+          Math.sin(v.x * 0.27 + v.z * 0.41 + 1.3) * 0.55 +
+          Math.sin(v.z * 0.33 + v.y * 0.19 + 2.9) * 0.45 +
+          Math.cos(v.x * 0.18 + v.z * 0.52 + 0.7) * 0.40 +
+          Math.cos(v.y * 0.29 + v.x * 0.44 + 4.1) * 0.30
+        ) * rockiness * fade;
+        const rLen = Math.sqrt(v.x * v.x + v.z * v.z) || 1;
+        v.x += (v.x / rLen) * bump * 0.85;
+        v.z += (v.z / rLen) * bump * 0.85;
+        v.y += bump * 0.28;
+        positions.setXYZ(i, v.x, v.y, v.z);
+      }
+    }
+    geo.computeVertexNormals();
+  }
+  const mat = new THREE.MeshStandardMaterial({ color, roughness, metalness, flatShading });
   return new THREE.Mesh(geo, mat);
 }
 
-// FLOATING ISLAND BASE - much wider
+// FLOATING ISLAND BASE — Animal Crossing style: thick grass cap + faceted cliff face
 function createIslandBase() {
   const baseGroup = new THREE.Group();
   baseGroup.name = 'islandBase';
 
-  const mainSlab = createRoundedBox(26, 5, 24, 1.4, 0xC0AA8A, 6, 0.55, 0.02);
+  // Cliff body — warm tan, flat shading + rocky displacement for natural craggy surface
+  const mainSlab = createRoundedBox(26, 5, 24, 1.4, 0xC0AA8A, 10, 0.58, 0.02, true, 0.55);
   mainSlab.name = 'mainSlab';
   mainSlab.position.y = -3;
   mainSlab.castShadow = true;
   mainSlab.receiveShadow = true;
   baseGroup.add(mainSlab);
 
-  const bottomSlab = createRoundedBox(20, 3, 18, 1.5, 0xAE9878, 5, 0.58, 0.02);
+  const bottomSlab = createRoundedBox(20, 3, 18, 1.5, 0xAE9878, 8, 0.62, 0.02, true, 0.45);
   bottomSlab.name = 'bottomSlab';
   bottomSlab.position.y = -6.5;
   bottomSlab.castShadow = true;
   baseGroup.add(bottomSlab);
 
-  const tipSlab = createRoundedBox(10, 2.5, 9, 1.2, 0x9E8868, 4, 0.60, 0.02);
+  const tipSlab = createRoundedBox(10, 2.5, 9, 1.2, 0x9E8868, 6, 0.66, 0.02, true, 0.35);
   tipSlab.name = 'tipSlab';
   tipSlab.position.y = -9;
   tipSlab.castShadow = true;
   baseGroup.add(tipSlab);
 
-  const grassTop = createRoundedBox(26.2, 0.6, 24.2, 0.5, 0x88C462, 6, 0.65, 0.0);
+  // Thick grass cap — chunky AC-style edge, raised to sit proud of the cliff top
+  const grassTop = createRoundedBox(26.2, 1.6, 24.2, 0.6, 0x8EB86C, 6, 0.70, 0.0);
   grassTop.name = 'grassTop';
-  grassTop.position.y = -0.3;
+  grassTop.position.y = -0.8;
   grassTop.receiveShadow = true;
   baseGroup.add(grassTop);
-
-  const dirtPatch1 = createRoundedBox(3, 1.5, 2, 0.5, 0xB4A082, 3, 0.60, 0.02);
-  dirtPatch1.name = 'dirtPatch1';
-  dirtPatch1.position.set(-10, -2, 3);
-  dirtPatch1.rotation.z = 0.2;
-  baseGroup.add(dirtPatch1);
-
-  const dirtPatch2 = createRoundedBox(2.5, 1.2, 3, 0.4, 0xB4A082, 3, 0.60, 0.02);
-  dirtPatch2.name = 'dirtPatch2';
-  dirtPatch2.position.set(8, -5, -9);
-  dirtPatch2.rotation.z = -0.15;
-  baseGroup.add(dirtPatch2);
-
-  const dirtPatch3 = createRoundedBox(2, 1.3, 2.5, 0.4, 0xB4A082, 3, 0.60, 0.02);
-  dirtPatch3.name = 'dirtPatch3';
-  dirtPatch3.position.set(10, -3, 5);
-  dirtPatch3.rotation.z = 0.1;
-  baseGroup.add(dirtPatch3);
 
   return baseGroup;
 }
@@ -1346,7 +1352,7 @@ island.add(createLamp(-5, 1.4, 'lampBowl'));
 function createCloud(x, y, z, scale, name) {
   const cloudGroup = new THREE.Group();
   cloudGroup.name = name;
-  const cloudMat = new THREE.MeshStandardMaterial({ color: 0xF0EEF8, roughness: 0.9, metalness: 0.0, transparent: true, opacity: 0.78 });
+  const cloudMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.55, metalness: 0.0, transparent: true, opacity: 0.92 });
 
   const puffs = [
     { px: 0, py: 0, pz: 0, s: 0.5 },
