@@ -1559,17 +1559,17 @@ hintEl.style.cssText = `
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
-  background: rgba(255,255,255,0.88);
+  background: rgba(17,17,17,0.88);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: 10px;
   padding: 6px 14px;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
-  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.18), 0 1px 3px rgba(0,0,0,0.10);
+  border: 1px solid rgba(255,255,255,0.06);
   font-family: 'Satoshi', 'Inter', -apple-system, sans-serif;
   font-size: 12px;
   font-weight: 500;
-  color: #555;
+  color: rgba(255,255,255,0.82);
   white-space: nowrap;
   pointer-events: none;
   user-select: none;
@@ -2686,6 +2686,9 @@ function updateSkater(delta) {
       if (bodyGroup) bodyGroup.rotation.x = 0.15; // slight lean back
       skaterState = 'benchSitting';
       bowlTimer = 0;
+      // Release camera — restore free orbit so user isn't locked to this area
+      cameraFollowMode = false;
+      cameraStateSaved = false;
     }
     return;
   }
@@ -2971,7 +2974,7 @@ overlayStyles.textContent = `
     width: 44px;
     height: 44px;
     border-radius: 50%;
-    background: #1A6070;
+    background: #111111;
     border: none;
     display: flex;
     align-items: center;
@@ -2984,15 +2987,15 @@ overlayStyles.textContent = `
     opacity: 0;
     transform: scale(0.8) rotate(-90deg);
     transition: opacity 0.35s ease 0.3s, transform 0.45s cubic-bezier(0.34,1.56,0.64,1) 0.3s, background 0.2s ease, box-shadow 0.2s ease;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.22);
   }
   #workOverlay.active #workClose {
     opacity: 1;
     transform: scale(1) rotate(0deg);
   }
   #workClose:hover {
-    background: #235e6e;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.22);
+    background: #333333;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.28);
   }
   #workScroll {
     position: fixed;
@@ -3374,7 +3377,7 @@ renderer.domElement.addEventListener('click', (event) => {
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(mouse, camera);
 
-  const buildingNames = ['buildingHQ', 'buildingStudio', 'buildingLab', 'buildingTower', 'buildingGallery', 'skaterHouse', 'skateBowl', 'iceCreamTruck'];
+  const buildingNames = ['buildingHQ', 'buildingStudio', 'buildingLab', 'buildingTower', 'buildingGallery', 'skaterHouse', 'iceCreamTruck'];
   const allBuildingMeshes = getBuildingMeshes(...buildingNames);
   const intersects = raycaster.intersectObjects(allBuildingMeshes, false);
 
@@ -3418,7 +3421,7 @@ renderer.domElement.addEventListener('mousemove', (event) => {
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
   raycaster.setFromCamera(mouse, camera);
-  const allBuildingMeshes = getBuildingMeshes('buildingHQ', 'buildingStudio', 'buildingLab', 'buildingTower', 'buildingGallery', 'skaterHouse', 'skateBowl', 'iceCreamTruck');
+  const allBuildingMeshes = getBuildingMeshes('buildingHQ', 'buildingStudio', 'buildingLab', 'buildingTower', 'buildingGallery', 'skaterHouse', 'iceCreamTruck');
   const intersects = raycaster.intersectObjects(allBuildingMeshes, false);
 
   renderer.domElement.style.cursor = intersects.length > 0 ? 'pointer' : 'default';
