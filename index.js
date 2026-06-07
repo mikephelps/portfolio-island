@@ -2920,6 +2920,7 @@ const brandData = {
       { img: 'assets/roboro-01.jpg', label: 'Design System - Web App' },
       { img: 'assets/roboro-02.jpg', label: 'Product Design - Bill Cards' },
       { img: 'assets/roboro-03.jpg', label: 'Product Design - Interactive w/ Filtering' },
+      { img: 'assets/roboro-03b.jpg', label: 'Product Design - Calendar Session' },
       { img: 'assets/roboro-04.jpg', label: 'Web - Hero Design' },
       { img: 'assets/roboro-05.jpg', label: 'Web - Custom Iconography & Components' },
     ],
